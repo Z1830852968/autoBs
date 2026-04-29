@@ -1,0 +1,23 @@
+{
+  "name": "autobs",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@autobs/web",
+    "dev:server": "turbo run dev --filter=@autobs/server",
+    "build": "turbo run build",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "vue-demi"]
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.6.3"
+  }
+}

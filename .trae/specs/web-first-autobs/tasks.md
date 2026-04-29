@@ -1,0 +1,52 @@
+# Tasks
+- [x] Task 1: 建立 monorepo 工程骨架
+  - [x] 初始化 pnpm workspace + turbo 配置，补齐根 package.json 与基础脚本
+  - [x] 创建 apps/web（Web 控制台）与 apps/server（本地 API/Worker）
+  - [x] 创建 packages 目录与基础包占位（core/logger/storage/task-orchestrator/pipeline/browser-pool/ai-service/image-processor/prompt-repo）
+- [x] Task 2: 落地 SQLite 数据层与迁移
+  - [x] 实现 db 连接与迁移机制（WAL 模式）
+  - [x] 创建 README 中定义的核心表结构与索引
+- [x] Task 3: 实现 TaskOrchestrator（状态机 + 持久化队列 + 恢复）
+  - [x] 顶级任务与子任务（每页）状态模型
+  - [x] Checkpoint 与恢复：重启后捞 pending/running 子任务继续
+- [x] Task 4: 实现 Pipeline 核心与 Crawl/Render Stage（可跑通）
+  - [x] Stage 接口（shouldRun/execute/onError）与产出物落盘规则
+  - [x] CrawlStage：收集目标 URL（基于配置/规则）
+  - [x] RenderStage：Playwright 截图并落盘
+- [x] Task 5: 实现 BrowserPool（单例 browser + context 池 + 并发信号量）
+  - [x] 并发上限配置与超时清理策略
+  - [x] 路由拦截（可配置）用于加速爬取
+- [x] Task 6: 实现 AIService（Provider 接口 + 缓存 + 重试/熔断 + 成本追踪）
+  - [x] Provider 抽象与优先级链路
+  - [x] ai_cache 表读写：image_hash + prompt_hash 去重
+  - [x] 失败降级：返回未分析并记录原因
+- [x] Task 7: 实现 ImageProcessor（SSIM + Pixelmatch + 动态掩码 + AI 兜底）
+  - [x] 指标计算与阈值配置
+  - [x] comparisons 表写入（含中间指标与最终判决）
+- [x] Task 8: 实现 apps/server API（项目/任务/结果/设置）与实时事件
+  - [x] REST API：项目 CRUD、任务创建/控制、结果查询
+  - [x] 实时进度：WebSocket/SSE 推送任务事件
+  - [x] SecretsManager（Web 兼容）：实现模式 A 或 B，并补齐文档
+- [ ] Task 9: 实现 apps/web（Vue 3）控制台 UI
+  - [ ] 视图：项目列表/编辑、任务控制台、结果浏览、设置、诊断
+  - [ ] 状态管理与 API 客户端（Pinia + composables）
+  - [ ] 任务进度实时展示与单页详情查看（截图/diff/AI）
+- [ ] Task 10: 测试与验证
+  - [ ] 单元测试：核心包关键逻辑（orchestrator/pipeline/ai cache）
+  - [ ] 集成测试：server API + SQLite 迁移
+  - [ ] e2e（可选最小集）：启动 server/web 后跑一次任务并产出结果
+- [ ] Task 11: 文档与开发工作流
+  - [ ] 更新 README 快速开始为“Web 模式”
+  - [ ] 增加本地开发、测试、构建脚本说明
+
+# Task Dependencies
+- Task 2 depends on Task 1
+- Task 3 depends on Task 2
+- Task 4 depends on Task 3
+- Task 5 depends on Task 1
+- Task 6 depends on Task 2
+- Task 7 depends on Task 4, Task 6
+- Task 8 depends on Task 3, Task 4
+- Task 9 depends on Task 8
+- Task 10 depends on Task 8, Task 9
+- Task 11 depends on Task 1
