@@ -39,72 +39,92 @@ const secrets = ref<{ mode: string; providers: Record<string, string | null> } |
 onMounted(async () => {
   secrets.value = await api.getSecrets();
 });
+
+function statusText(st: string) {
+  if (st === "completed") return "已完成";
+  if (st === "running") return "运行中";
+  if (st === "pending") return "排队中";
+  if (st === "paused") return "已暂停";
+  if (st === "failed") return "失败";
+  if (st === "cancelled") return "已取消";
+  return st;
+}
 </script>
 
 <template>
-  <div class="page-title">
-    <div>
-      <h2>Diagnostics</h2>
-      <p>运行态：健康检查 / SSE / 最近任务</p>
-    </div>
-    <span :class="connected ? 'pill ok' : 'pill warn'">{{ connected ? "events: on" : "events: off" }}</span>
-  </div>
-
   <div class="grid">
     <div class="card">
-      <div style="display: flex; align-items: center; justify-content: space-between">
-        <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Server</div>
-        <span :class="store.healthOk ? 'pill ok' : 'pill bad'">{{ store.healthOk ? "health: ok" : "health: bad" }}</span>
+      <div class="card-title">
+        <div>
+          <div class="card-h">诊断面板</div>
+          <div class="muted small">用于确认服务健康、事件流连接、最近任务是否在正常刷新。</div>
+        </div>
+        <span :class="connected ? 'pill pill-ok' : 'pill pill-warn'">{{ connected ? "事件流已连接" : "事件流未连接" }}</span>
       </div>
-      <div v-if="error" style="margin-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted)">
-        {{ error }}
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">
+          <div>
+            <div class="card-h">服务健康</div>
+            <div class="muted small">后端 /health 与 SSE 状态。</div>
+          </div>
+          <span :class="store.healthOk ? 'pill pill-ok' : 'pill pill-bad'">{{ store.healthOk ? "健康" : "异常" }}</span>
+        </div>
+        <div v-if="error" class="muted mono small" style="margin-top: 10px">{{ error }}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <div>
+            <div class="card-h">工作区</div>
+            <div class="muted small">项目数量与凭证模式。</div>
+          </div>
+          <span class="pill pill-soft">{{ store.projects.length }} 个项目</span>
+        </div>
+        <div class="grid" style="margin-top: 14px">
+          <div class="pill pill-soft">secrets：<span class="mono">{{ secrets?.mode ?? "-" }}</span></div>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <div style="display: flex; align-items: center; justify-content: space-between">
-        <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Workspace</div>
-        <span class="pill">{{ store.projects.length }} projects</span>
-      </div>
-      <div style="margin-top: 10px; display: grid; gap: 10px">
-        <div class="pill">secrets: {{ secrets?.mode ?? "-" }}</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="display: flex; align-items: center; justify-content: space-between">
-        <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Recent Tasks</div>
-        <span class="pill">{{ tasks.length }} items</span>
+      <div class="card-title">
+        <div>
+          <div class="card-h">最近任务</div>
+          <div class="muted small">从事件流获取最近 20 条任务快照。</div>
+        </div>
+        <span class="pill pill-soft">{{ tasks.length }} 条</span>
       </div>
 
-      <table class="table" style="margin-top: 12px">
+      <table class="table" style="margin-top: 14px">
         <thead>
           <tr>
-            <th>Task</th>
-            <th>Status</th>
-            <th>Progress</th>
-            <th style="width: 120px">Action</th>
+            <th>任务</th>
+            <th>状态</th>
+            <th>进度</th>
+            <th style="width: 120px">操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="t in tasks" :key="t.id">
-            <td style="color: var(--muted)">{{ t.id.slice(0, 8) }}</td>
+            <td class="muted mono">{{ t.id.slice(0, 8) }}</td>
             <td>
-              <span :class="t.status === 'completed' ? 'pill ok' : t.status === 'running' ? 'pill warn' : 'pill'">
-                {{ t.status }}
+              <span :class="t.status === 'completed' ? 'pill pill-ok' : t.status === 'running' ? 'pill pill-warn' : 'pill'">
+                {{ statusText(t.status) }}
               </span>
             </td>
-            <td style="font-family: var(--mono); color: var(--muted)">{{ Math.round((t.progress ?? 0) * 100) }}%</td>
+            <td class="muted mono">{{ Math.round((t.progress ?? 0) * 100) }}%</td>
             <td>
-              <button class="btn" @click="store.loadTask(t.id)">Open</button>
+              <button class="btn" @click="store.loadTask(t.id)">打开</button>
             </td>
           </tr>
           <tr v-if="tasks.length === 0">
-            <td colspan="4" style="color: var(--muted)">No tasks</td>
+            <td colspan="4" class="muted">暂无任务。</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 </template>
-

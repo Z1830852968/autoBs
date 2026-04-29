@@ -10,12 +10,27 @@ const selectedPageIds = ref<Record<string, boolean>>({});
 const canRun = computed(() => store.selectedProjectId.length > 0 && store.pages.length > 0);
 const selectedIds = computed(() => Object.entries(selectedPageIds.value).filter(([, v]) => v).map(([k]) => k));
 
+function statusText(st: string) {
+  if (st === "completed") return "已完成";
+  if (st === "running") return "运行中";
+  if (st === "paused") return "已暂停";
+  if (st === "pending") return "排队中";
+  if (st === "failed") return "失败";
+  if (st === "cancelled") return "已取消";
+  if (st === "idle") return "未开始";
+  return st;
+}
+
+function statusBadge(st: string) {
+  if (st === "completed") return "pill pill-ok";
+  if (st === "running" || st === "pending") return "pill pill-warn";
+  if (st === "failed" || st === "cancelled") return "pill pill-bad";
+  return "pill";
+}
+
 const statusPill = computed(() => {
   const st = store.task?.status ?? "idle";
-  if (st === "completed") return { cls: "pill ok", text: "completed" };
-  if (st === "running") return { cls: "pill warn", text: "running" };
-  if (st === "failed" || st === "cancelled") return { cls: "pill bad", text: st };
-  return { cls: "pill", text: st };
+  return { cls: statusBadge(st), text: statusText(st) };
 });
 
 function normalizeSelection() {
@@ -108,127 +123,124 @@ watch(
 </script>
 
 <template>
-  <div class="page-title">
-    <div>
-      <h2>Tasks</h2>
-      <p>任务编排：pending → running → completed/failed</p>
-    </div>
-    <span :class="statusPill.cls">{{ statusPill.text }}</span>
-  </div>
-
-  <div v-if="store.selectedTaskId" class="card" style="margin-bottom: 14px">
-    <div style="display: flex; align-items: center; justify-content: space-between">
-      <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Events</div>
-      <span :class="sseConnected ? 'pill ok' : 'pill warn'">{{ sseConnected ? "sse: on" : "sse: off" }}</span>
-    </div>
-    <div v-if="sseError" style="margin-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted)">
-      {{ sseError }}
-    </div>
-  </div>
-
-  <div v-if="!store.selectedProjectId" class="card">
-    <div style="font-family: var(--mono); color: var(--muted); font-size: 12px">No project selected</div>
-  </div>
-
-  <div v-else class="grid">
+  <div class="grid">
     <div class="card">
-      <div style="display: flex; align-items: center; justify-content: space-between">
+      <div class="card-title">
         <div>
-          <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Project</div>
-          <div style="margin-top: 4px; font-size: 18px">{{ store.project?.name }}</div>
+          <div class="card-h">任务状态</div>
+          <div class="muted small">页面选好后即可启动；启动后会自动订阅 SSE，实时刷新进度与截图。</div>
         </div>
-        <span class="pill">{{ store.pages.length }} pages</span>
-      </div>
-
-      <div style="margin-top: 12px; display: grid; gap: 8px">
-        <div v-for="p in store.pages" :key="p.id" style="display: flex; align-items: center; justify-content: space-between">
-          <label style="display: flex; gap: 10px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--muted)">
-            <input type="checkbox" v-model="selectedPageIds[p.id]" />
-            <span style="color: var(--text)">{{ p.url }}</span>
-          </label>
-          <span class="pill">{{ p.id.slice(0, 8) }}</span>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap">
-        <button class="btn primary" :disabled="!canRun" @click="runTask">Run</button>
-        <button class="btn" :disabled="!store.selectedTaskId" @click="pause">Pause</button>
-        <button class="btn" :disabled="!store.selectedTaskId" @click="resume">Resume</button>
-        <button class="btn" :disabled="!store.selectedTaskId" @click="cancel">Cancel</button>
+        <span :class="statusPill.cls">{{ statusPill.text }}</span>
       </div>
     </div>
 
-    <div class="card">
-      <div class="row">
-        <div class="field">
-          <label>Task ID</label>
-          <input v-model="taskIdInput" placeholder="paste task id" />
+    <div v-if="store.selectedTaskId" class="card">
+      <div class="card-title">
+        <div>
+          <div class="card-h">实时连接</div>
+          <div class="muted small">SSE：用于每秒推送任务快照。</div>
         </div>
-        <div class="field" style="display: flex; gap: 10px; align-items: flex-end">
-          <button class="btn" @click="openTask">Open</button>
-          <button class="btn" @click="store.loadTask(store.selectedTaskId)" :disabled="!store.selectedTaskId">Refresh</button>
-        </div>
+        <span :class="sseConnected ? 'pill pill-ok' : 'pill pill-warn'">{{ sseConnected ? "已连接" : "未连接" }}</span>
       </div>
-
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px">
-        <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Progress</div>
-        <span class="pill">{{ Math.round((store.task?.progress ?? 0) * 100) }}%</span>
-      </div>
-
-      <div
-        style="
-          margin-top: 10px;
-          height: 10px;
-          border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          overflow: hidden;
-          background: rgba(0, 0, 0, 0.18);
-        "
-      >
-        <div
-          :style="{
-            height: '100%',
-            width: `${Math.round((store.task?.progress ?? 0) * 100)}%`,
-            background: 'linear-gradient(90deg, rgba(124, 247, 197, 0.9), rgba(255, 211, 110, 0.9))'
-          }"
-        />
-      </div>
+      <div v-if="sseError" class="muted mono small" style="margin-top: 10px">{{ sseError }}</div>
     </div>
 
-    <div class="card">
-      <div style="display: flex; align-items: center; justify-content: space-between">
-        <div style="font-family: var(--mono); font-size: 12px; color: var(--muted)">Items</div>
-        <span class="pill">{{ store.taskItems.length }} items</span>
+    <div v-if="!store.selectedProjectId" class="notice">
+      <div class="card-h">还没有选择项目</div>
+      <div class="muted small" style="margin-top: 6px">请先到「项目」创建/选择一个项目，并至少添加一个页面。</div>
+    </div>
+
+    <div v-else class="grid">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <div>
+              <div class="card-h">页面选择</div>
+              <div class="muted small">默认全选；也可以只跑关键页面。</div>
+            </div>
+            <span class="pill pill-soft">共 {{ store.pages.length }} 页</span>
+          </div>
+
+          <div class="grid" style="margin-top: 14px">
+            <div v-for="p in store.pages" :key="p.id" class="toolbar" style="justify-content: space-between">
+              <label class="toolbar mono small" style="gap: 10px; align-items: center; color: rgba(255, 255, 255, 0.82)">
+                <input type="checkbox" v-model="selectedPageIds[p.id]" />
+                <span>{{ p.url }}</span>
+              </label>
+              <span class="pill pill-soft">{{ p.id.slice(0, 8) }}</span>
+            </div>
+          </div>
+
+          <div class="toolbar" style="margin-top: 14px">
+            <button class="btn btn-primary" :disabled="!canRun" @click="runTask">启动任务</button>
+            <button class="btn" :disabled="!store.selectedTaskId" @click="pause">暂停</button>
+            <button class="btn" :disabled="!store.selectedTaskId" @click="resume">继续</button>
+            <button class="btn btn-danger" :disabled="!store.selectedTaskId" @click="cancel">取消</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <div>
+              <div class="card-h">打开任务</div>
+              <div class="muted small">粘贴 Task ID 可快速定位历史任务。</div>
+            </div>
+            <span class="pill pill-soft">进度：{{ Math.round((store.task?.progress ?? 0) * 100) }}%</span>
+          </div>
+
+          <div class="grid" style="margin-top: 14px">
+            <div class="field">
+              <label>任务 ID</label>
+              <input v-model="taskIdInput" placeholder="例如：2c0f1f5a-..." />
+            </div>
+            <div class="toolbar">
+              <button class="btn" @click="openTask" :disabled="!taskIdInput">打开</button>
+              <button class="btn" @click="store.loadTask(store.selectedTaskId)" :disabled="!store.selectedTaskId">刷新</button>
+            </div>
+            <div class="progress">
+              <div :style="{ width: `${Math.round((store.task?.progress ?? 0) * 100)}%` }" />
+            </div>
+            <div class="muted mono small">任务：{{ store.selectedTaskId ? store.selectedTaskId : "未选择" }}</div>
+          </div>
+        </div>
       </div>
 
-      <table class="table" style="margin-top: 12px">
-        <thead>
-          <tr>
-            <th>Page</th>
-            <th>Status</th>
-            <th>Screenshot</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="it in store.taskItems" :key="it.id">
-            <td style="color: var(--muted)">{{ it.pageId.slice(0, 8) }}</td>
-            <td>
-              <span :class="it.status === 'completed' ? 'pill ok' : it.status === 'failed' ? 'pill bad' : it.status === 'running' ? 'pill warn' : 'pill'">
-                {{ it.status }}
-              </span>
-            </td>
-            <td>
-              <a v-if="it.screenshotUrl" :href="it.screenshotUrl" target="_blank" rel="noreferrer">
-                <img class="thumb" :src="it.screenshotUrl" />
-              </a>
-              <span v-else class="pill">-</span>
-            </td>
-          </tr>
-          <tr v-if="store.taskItems.length === 0">
-            <td colspan="3" style="color: var(--muted)">No items</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="card">
+        <div class="card-title">
+          <div>
+            <div class="card-h">任务条目</div>
+            <div class="muted small">每个页面一个条目；截图可点击放大。</div>
+          </div>
+          <span class="pill pill-soft">{{ store.taskItems.length }} 条</span>
+        </div>
+
+        <table class="table" style="margin-top: 14px">
+          <thead>
+            <tr>
+              <th>页面</th>
+              <th>状态</th>
+              <th>截图</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="it in store.taskItems" :key="it.id">
+              <td class="muted mono">{{ it.pageId.slice(0, 8) }}</td>
+              <td>
+                <span :class="statusBadge(it.status)">{{ statusText(it.status) }}</span>
+              </td>
+              <td>
+                <a v-if="it.screenshotUrl" :href="it.screenshotUrl" target="_blank" rel="noreferrer">
+                  <img class="thumb" :src="it.screenshotUrl" />
+                </a>
+                <span v-else class="pill pill-soft">暂无</span>
+              </td>
+            </tr>
+            <tr v-if="store.taskItems.length === 0">
+              <td colspan="3" class="muted">暂无条目，请先启动任务。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
