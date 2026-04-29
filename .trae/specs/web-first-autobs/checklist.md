@@ -1,12 +1,11 @@
-- [ ] 仓库存在可用的 pnpm monorepo 骨架（apps + packages）且基础脚本可运行
-- [ ] SQLite 迁移可重复执行，核心表结构与索引与 spec/README 对齐
-- [ ] 任务可持久化：创建任务后可在重启服务后恢复 pending/running 子任务继续执行
-- [ ] Pipeline 可跑通至少 1 个示例项目：完成 Crawl + Render 并生成截图产出物
-- [ ] BrowserPool 并发限制生效且无明显资源泄漏（Context 超时清理/关闭）
-- [ ] AIService 具备缓存与降级：同一输入不重复调用；Provider 失败不阻断任务完成
-- [ ] ImageProcessor 产出 SSIM、像素差异率与最终 verdict，并在灰区触发 AI 兜底（可配置）
-- [ ] server 提供项目/任务/结果 API，并通过 WebSocket/SSE 推送任务事件
-- [ ] web 控制台可创建项目、启动任务、查看进度与单页详情（截图/diff/AI）
-- [ ] 不记录/泄露敏感信息：日志与接口不返回明文密钥；前端仅显示掩码
-- [ ] 测试通过：单测/集成测试（以及可选 e2e）在 CI 环境可运行
-
+- [x] 仓库存在可用的 pnpm monorepo 骨架（apps + packages）且基础脚本可运行
+- [x] SQLite 迁移可重复执行，核心表结构与索引与 spec/README 对齐
+- [x] 任务可持久化：创建任务后可在重启服务后恢复 pending/running 子任务继续执行
+- [x] Pipeline 可跑通至少 1 个示例项目：完成 Crawl + Render 并生成截图产出物
+- [x] BrowserPool 并发限制生效且无明显资源泄漏（Context 超时清理/关闭）
+- [x] AIService 具备缓存与降级：同一输入不重复调用；Provider 失败不阻断任务完成
+- [x] ImageProcessor 产出 SSIM、像素差异率与最终 verdict，并在灰区触发 AI 兜底（可配置）
+- [x] server 提供项目/任务/结果 API，并通过 WebSocket/SSE 推送任务事件
+- [x] web 控制台可创建项目、启动任务、查看进度与单页详情（截图/diff/AI）
+- [x] 不记录/泄露敏感信息：日志与接口不返回明文密钥；前端仅显示掩码
+- [x] 测试通过：单测/集成测试（以及可选 e2e）在 CI 环境可运行

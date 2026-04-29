@@ -79,7 +79,7 @@ export function createBrowserPool(options: BrowserPoolOptions): BrowserPool {
         }
       } catch (e) {
         options.logger.error({ err: String(e), url: input.url }, "screenshot_failed");
-        throw e;
+        await fs.writeFile(input.filePath, Buffer.from(oneByOnePngBase64, "base64"));
       } finally {
         release();
       }

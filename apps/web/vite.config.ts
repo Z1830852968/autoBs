@@ -7,8 +7,9 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      "/health": "http://localhost:8787"
+      "/health": "http://localhost:8787",
+      "/api": "http://localhost:8787",
+      "/artifacts": "http://localhost:8787"
     }
   }
 });
-

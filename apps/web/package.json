@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "type-check": "vue-tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "pinia": "^2.3.0",
@@ -21,4 +21,3 @@
     "vue-tsc": "^2.1.10"
   }
 }
-

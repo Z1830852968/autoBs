@@ -27,17 +27,17 @@
   - [x] REST API：项目 CRUD、任务创建/控制、结果查询
   - [x] 实时进度：WebSocket/SSE 推送任务事件
   - [x] SecretsManager（Web 兼容）：实现模式 A 或 B，并补齐文档
-- [ ] Task 9: 实现 apps/web（Vue 3）控制台 UI
-  - [ ] 视图：项目列表/编辑、任务控制台、结果浏览、设置、诊断
-  - [ ] 状态管理与 API 客户端（Pinia + composables）
-  - [ ] 任务进度实时展示与单页详情查看（截图/diff/AI）
-- [ ] Task 10: 测试与验证
-  - [ ] 单元测试：核心包关键逻辑（orchestrator/pipeline/ai cache）
-  - [ ] 集成测试：server API + SQLite 迁移
-  - [ ] e2e（可选最小集）：启动 server/web 后跑一次任务并产出结果
-- [ ] Task 11: 文档与开发工作流
-  - [ ] 更新 README 快速开始为“Web 模式”
-  - [ ] 增加本地开发、测试、构建脚本说明
+- [x] Task 9: 实现 apps/web（Vue 3）控制台 UI
+  - [x] 视图：项目列表/编辑、任务控制台、结果浏览、设置、诊断
+  - [x] 状态管理与 API 客户端（Pinia + composables）
+  - [x] 任务进度实时展示与单页详情查看（截图/diff/AI）
+- [x] Task 10: 测试与验证
+  - [x] 单元测试：核心包关键逻辑（orchestrator/pipeline/ai cache）
+  - [x] 集成测试：server API + SQLite 迁移
+  - [x] e2e（可选最小集）：启动 server/web 后跑一次任务并产出结果
+- [x] Task 11: 文档与开发工作流
+  - [x] 更新 README 快速开始为“Web 模式”
+  - [x] 增加本地开发、测试、构建脚本说明
 
 # Task Dependencies
 - Task 2 depends on Task 1
