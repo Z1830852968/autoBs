@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import os from "node:os";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 async function waitForJson(url: string, timeoutMs: number) {
   const start = Date.now();
@@ -27,10 +30,12 @@ async function waitFor(condition: () => Promise<boolean>, timeoutMs: number) {
 test("e2e creates task and serves screenshot artifact", async () => {
   const port = 8791;
   const cwd = fileURLToPath(new URL("..", import.meta.url));
+  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "autobs-server-e2e-"));
   const child = spawn("pnpm", ["exec", "tsx", "src/index.ts"], {
     cwd,
-    env: { ...process.env, PORT: String(port), CI: "true" },
-    stdio: "inherit"
+    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, AUTOBS_BROWSER_MOCK: "true" },
+    stdio: "inherit",
+    detached: true
   });
 
   try {
@@ -69,11 +74,24 @@ test("e2e creates task and serves screenshot artifact", async () => {
     assert.equal(img.status, 200);
     assert.equal(img.headers.get("content-type"), "image/png");
   } finally {
-    child.kill("SIGTERM");
     await new Promise<void>((resolve) => {
-      child.once("exit", () => resolve());
-      setTimeout(() => resolve(), 1000).unref();
+      if (child.exitCode == null) {
+        try {
+          process.kill(-child.pid, "SIGTERM");
+        } catch {}
+      }
+      if (child.exitCode != null) return resolve();
+      const t = setTimeout(() => {
+        if (child.exitCode == null) {
+          try {
+            process.kill(-child.pid, "SIGKILL");
+          } catch {}
+        }
+      }, 3000);
+      child.once("exit", () => {
+        clearTimeout(t);
+        resolve();
+      });
     });
   }
 });
-

@@ -1,0 +1,5 @@
+- [x] 默认运行（不设置任何 mock 开关）时，BrowserPool 使用真实 Playwright 截图并生成非占位 PNG
+- [x] 显式设置 `AUTOBS_BROWSER_MOCK=true` 时，系统进入 mock 模式且日志/界面明确提示 mock 已启用
+- [x] Playwright 不可用时（未安装/缺依赖），服务端给出提示且前端不白屏
+- [x] 真实 e2e：使用本地静态站点跑一次任务，artifacts 中截图可被解析且尺寸大于阈值
+- [x] README/CI：包含 Playwright Chromium 安装步骤，并保证 CI 跑完真实 e2e

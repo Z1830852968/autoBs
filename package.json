@@ -10,8 +10,11 @@
     "dev:web": "turbo run dev --filter=@autobs/web",
     "dev:server": "turbo run dev --filter=@autobs/server",
     "build": "turbo run build",
+    "playwright:install": "pnpm dlx playwright install chromium",
+    "playwright:install-deps": "pnpm dlx playwright install-deps",
     "type-check": "turbo run type-check",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "test:e2e:real": "AUTOBS_REAL_E2E=true pnpm --filter @autobs/server test"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "vue-demi"]

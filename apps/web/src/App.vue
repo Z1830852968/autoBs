@@ -49,6 +49,9 @@
       </header>
 
       <main class="content">
+        <div v-if="store.lastError" class="notice notice-bad mono small" style="margin-bottom: 14px">
+          {{ store.lastError }}
+        </div>
         <router-view />
       </main>
     </section>

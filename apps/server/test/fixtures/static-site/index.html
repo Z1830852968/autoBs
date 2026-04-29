@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>autoBs 真实截图验收页</title>
+    <style>
+      :root {
+        --bg0: #070a10;
+        --bg1: #0b1020;
+        --a0: #56f0c7;
+        --a1: #7aa6ff;
+        --w: rgba(255, 255, 255, 0.92);
+        --m: rgba(255, 255, 255, 0.62);
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--w);
+        background: radial-gradient(900px 520px at 20% -10%, rgba(86, 240, 199, 0.18), transparent 60%),
+          radial-gradient(900px 520px at 80% 0%, rgba(122, 166, 255, 0.14), transparent 60%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 42px 22px;
+      }
+      .hero {
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        padding: 22px 22px;
+      }
+      .kicker {
+        font-size: 12px;
+        letter-spacing: 0.2px;
+        color: var(--m);
+      }
+      h1 {
+        margin: 10px 0 0;
+        font-size: 28px;
+        letter-spacing: 0.2px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 16px;
+      }
+      .card {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.18);
+        padding: 16px 16px;
+      }
+      .card b {
+        display: block;
+        margin-bottom: 8px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.16);
+        font-size: 12px;
+        color: var(--m);
+      }
+      .pill span {
+        color: var(--w);
+        margin-left: 6px;
+      }
+      .accent {
+        color: var(--a0);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <div class="kicker">autoBs • 离线验收页面</div>
+        <h1>真实截图验收：非 1×1 占位图</h1>
+        <div class="grid">
+          <div class="card">
+            <b>关键信息</b>
+            <div class="pill">时间戳<span id="ts">-</span></div>
+          </div>
+          <div class="card">
+            <b>视觉锚点</b>
+            <div class="pill">色彩<span class="accent">A0/A1</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.getElementById("ts").textContent = new Date().toISOString();
+    </script>
+  </body>
+</html>

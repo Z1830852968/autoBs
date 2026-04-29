@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import os from "node:os";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 async function waitForOk(url: string, timeoutMs: number) {
   const start = Date.now();
@@ -18,10 +21,16 @@ async function waitForOk(url: string, timeoutMs: number) {
 test("server health and basic project/task flow", async () => {
   const port = 8790;
   const cwd = fileURLToPath(new URL("..", import.meta.url));
+  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "autobs-server-test-"));
   const child = spawn(
     "pnpm",
     ["exec", "tsx", "src/index.ts"],
-    { cwd, env: { ...process.env, PORT: String(port), CI: "true" }, stdio: "inherit" }
+    {
+      cwd,
+      env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, AUTOBS_BROWSER_MOCK: "true" },
+      stdio: "inherit",
+      detached: true
+    }
   );
 
   try {
@@ -56,10 +65,24 @@ test("server health and basic project/task flow", async () => {
     const taskPayload = (await taskResp.json()) as any;
     assert.equal(taskPayload.task.id, taskId);
   } finally {
-    child.kill("SIGTERM");
     await new Promise<void>((resolve) => {
-      child.once("exit", () => resolve());
-      setTimeout(() => resolve(), 1000).unref();
+      if (child.exitCode == null) {
+        try {
+          process.kill(-child.pid, "SIGTERM");
+        } catch {}
+      }
+      if (child.exitCode != null) return resolve();
+      const t = setTimeout(() => {
+        if (child.exitCode == null) {
+          try {
+            process.kill(-child.pid, "SIGKILL");
+          } catch {}
+        }
+      }, 3000);
+      child.once("exit", () => {
+        clearTimeout(t);
+        resolve();
+      });
     });
   }
 });

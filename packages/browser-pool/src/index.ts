@@ -24,6 +24,15 @@ export type BrowserPool = {
   close: () => Promise<void>;
 };
 
+function parseBooleanEnv(value: string | undefined): boolean | undefined {
+  if (value == null) return undefined;
+  const v = value.trim().toLowerCase();
+  if (v === "") return undefined;
+  if (v === "1" || v === "true" || v === "yes" || v === "y" || v === "on") return true;
+  if (v === "0" || v === "false" || v === "no" || v === "n" || v === "off") return false;
+  return undefined;
+}
+
 async function createPage(browser: Browser, blockResources: boolean): Promise<Page> {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -45,10 +54,18 @@ async function createPage(browser: Browser, blockResources: boolean): Promise<Pa
 
 export function createBrowserPool(options: BrowserPoolOptions): BrowserPool {
   const sem = new Semaphore(options.concurrency ?? 4);
-  const mock = options.mock ?? process.env.CI === "true";
+  const mockFromEnv = parseBooleanEnv(process.env.AUTOBS_BROWSER_MOCK);
+  const mock = options.mock ?? mockFromEnv ?? false;
   const blockResources = options.blockResources ?? true;
 
   let browserPromise: Promise<Browser> | undefined;
+
+  if (mock) {
+    options.logger.warn(
+      { source: options.mock !== undefined ? "options" : "env", env: process.env.AUTOBS_BROWSER_MOCK },
+      "browser_pool_mock_enabled"
+    );
+  }
 
   async function getBrowser(): Promise<Browser> {
     if (!browserPromise) {
@@ -63,6 +80,7 @@ export function createBrowserPool(options: BrowserPoolOptions): BrowserPool {
   return {
     async screenshot(input) {
       if (mock) {
+        options.logger.info({ url: input.url, filePath: input.filePath }, "screenshot_mocked");
         await fs.writeFile(input.filePath, Buffer.from(oneByOnePngBase64, "base64"));
         return;
       }
@@ -78,8 +96,10 @@ export function createBrowserPool(options: BrowserPoolOptions): BrowserPool {
           await page.close();
         }
       } catch (e) {
-        options.logger.error({ err: String(e), url: input.url }, "screenshot_failed");
-        await fs.writeFile(input.filePath, Buffer.from(oneByOnePngBase64, "base64"));
+        const hint =
+          "Playwright 截图失败。若是首次运行或提示找不到浏览器，可执行：pnpm playwright:install";
+        options.logger.error({ err: String(e), url: input.url, hint }, "screenshot_failed");
+        throw new Error(`${hint}; err=${String(e)}`);
       } finally {
         release();
       }

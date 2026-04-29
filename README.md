@@ -479,6 +479,30 @@ pnpm dev:web
 - `QWEN_API_KEY`
 - `DEEPSEEK_API_KEY`
 
+### 运行开关
+
+- `AUTOBS_BROWSER_MOCK`: `true/false`，启用后截图走 mock（写入 1x1 PNG，占位）
+
+### Playwright（真实截图）
+
+默认截图为真实 Playwright（Chromium）。首次运行或提示找不到浏览器时，先执行：
+
+```bash
+pnpm playwright:install
+```
+
+Linux 若缺少系统依赖库（例如 libatk 等），执行：
+
+```bash
+pnpm playwright:install-deps
+```
+
+运行离线“真实 e2e”验收（本地静态站点 → 跑任务 → 校验截图非 1x1）：
+
+```bash
+pnpm test:e2e:real
+```
+
 ### 开发工作流
 
 ```bash

@@ -23,11 +23,8 @@ export function createRenderStage(): Stage {
       await fs.mkdir(dir, { recursive: true });
       const out = path.join(dir, `${ctx.taskItemId}.png`);
 
-      if (ctx.browserPool) {
-        await ctx.browserPool.screenshot({ url, filePath: out });
-      } else {
-        await fs.writeFile(out, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/xcAAn8B9p7gkQAAAABJRU5ErkJggg==", "base64"));
-      }
+      if (!ctx.browserPool) throw new Error("browser_pool_missing");
+      await ctx.browserPool.screenshot({ url, filePath: out });
 
       const executionId = randomUUID();
       ctx.db.raw

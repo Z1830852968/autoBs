@@ -28,6 +28,18 @@ function statusBadge(st: string) {
   return "pill";
 }
 
+function itemError(it: { status: string; result: string | null }): string {
+  if (it.status !== "failed") return "";
+  if (!it.result) return "";
+  try {
+    const parsed = JSON.parse(it.result);
+    if (parsed && typeof parsed === "object" && "message" in parsed) return String((parsed as any).message);
+    return it.result;
+  } catch {
+    return it.result;
+  }
+}
+
 const statusPill = computed(() => {
   const st = store.task?.status ?? "idle";
   return { cls: statusBadge(st), text: statusText(st) };
@@ -233,6 +245,9 @@ watch(
                   <img class="thumb" :src="it.screenshotUrl" />
                 </a>
                 <span v-else class="pill pill-soft">暂无</span>
+                <div v-if="itemError(it)" class="muted small" style="margin-top: 8px; white-space: pre-wrap">
+                  失败原因：{{ itemError(it) }}
+                </div>
               </td>
             </tr>
             <tr v-if="store.taskItems.length === 0">

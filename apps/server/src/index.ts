@@ -54,7 +54,7 @@ type Runtime = {
 };
 
 async function createRuntime(): Promise<Runtime> {
-  const dataDir = path.resolve(process.cwd(), "data");
+  const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.resolve(process.cwd(), "data");
   const db = await openDb({ dataDir });
   const browserPool = createBrowserPool({ logger });
   const pipeline = createPipeline([createCrawlStage(), createRenderStage()], logger);
@@ -62,8 +62,14 @@ async function createRuntime(): Promise<Runtime> {
     db,
     logger,
     runTaskItem: async ({ taskId, taskItemId, pageId }) => {
-      const results = await pipeline.run({ db, dataDir, browserPool, taskId, taskItemId, pageId });
-      db.raw.prepare("UPDATE task_items SET result = ? WHERE id = ?").run(JSON.stringify(results), taskItemId);
+      try {
+        const results = await pipeline.run({ db, dataDir, browserPool, taskId, taskItemId, pageId });
+        db.raw.prepare("UPDATE task_items SET result = ? WHERE id = ?").run(JSON.stringify(results), taskItemId);
+      } catch (e) {
+        const payload = { kind: "error", message: String(e) };
+        db.raw.prepare("UPDATE task_items SET result = ? WHERE id = ?").run(JSON.stringify(payload), taskItemId);
+        throw e;
+      }
     }
   });
   await orchestrator.start();
