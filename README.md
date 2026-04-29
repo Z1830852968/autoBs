@@ -443,7 +443,7 @@ CREATE INDEX idx_ai_cache_expiry ON ai_cache(expires_at);
 ### 环境要求
 
 - **Node.js**: 20.0+
-- **pnpm**: 8.0+
+- **pnpm**: 10.0+
 - **操作系统**: macOS 10.15+ / Windows 10+ / Ubuntu 18+
 
 ### 安装依赖
@@ -456,20 +456,33 @@ cd autoBs
 # 安装依赖
 pnpm install
 
-# 构建核心包
-pnpm build
-
-# 启动Electron应用
-pnpm dev:electron
-
-# 或启动轻量HTTP服务
+# 启动本地 API / Worker
 pnpm dev:server
+
+# 启动 Web 控制台
+pnpm dev:web
 ```
+
+打开浏览器访问：
+- http://localhost:5173
+
+运行时数据默认落在：
+- `./data/db.sqlite`
+- `./data/screenshots/`
+
+### Secrets（Web 模式）
+
+当前 Web 模式默认采用 **env_only** 策略：Server 从环境变量读取密钥，前端只展示掩码，不会拿到明文。
+
+可用环境变量：
+- `ZHIPU_API_KEY`
+- `QWEN_API_KEY`
+- `DEEPSEEK_API_KEY`
 
 ### 开发工作流
 
 ```bash
-# 开发模式（watch + hot reload）
+# 全量开发（web + server）
 pnpm dev
 
 # 运行测试
@@ -478,36 +491,18 @@ pnpm test
 # 类型检查
 pnpm type-check
 
-# 构建生产包
-pnpm build:prod
-
-# 打包Electron安装器
-pnpm package:electron
+# 构建
+pnpm build
 ```
 
 ### 配置示例
 
-```typescript
-// projects.config.ts
-export const projectConfig = {
-  name: "E-Commerce Test",
-  baseUrl: "https://example.com",
-  crawlRules: {
-    pageSelector: "a.product-link",
-    waitForSelector: ".product-list",
-    timeout: 30000,
-  },
-  compareConfig: {
-    ssimThreshold: 0.98,
-    pixelDiffThreshold: 0.005,  // 0.5%
-    aiSimilarityThreshold: 0.85,
-  },
-  aiProviders: ["zhipu", "qwen"],  // 优先级顺序
-  credentials: {
-    apiKeyZhipu: "sk-xxx",  // 将被加密存储
-  },
-};
-```
+目前以 Web 控制台创建项目与页面清单为主：
+- Projects：创建项目（name/baseUrl）
+- 添加 page URL
+- Tasks：选择页面并 Run，产出截图与阶段结果
+ 
+后续会补齐完整的 crawl 规则/对比阈值/AI provider 配置表单与导出能力。
 
 ---
 
@@ -517,18 +512,16 @@ export const projectConfig = {
 |------|--------|------|
 | **包管理** | pnpm | monorepo支持，依赖管理严格 |
 | **构建工具** | Vite + Turborepo | 极速构建，增量编译 |
-| **桌面壳** | Electron 27+ | 跨平台，成熟生态 |
+| **桌面壳** | （暂不引入） | Web 优先验证完整链路，后续可加 Electron 薄壳 |
 | **前端** | Vue 3 + Pinia | 组合式API，类型安全 |
-| **浏览器自动化** | Playwright | Chromium/Firefox/WebKit多引擎 |
-| **数据库** | SQLite (WAL模式) | 内嵌式，无服务，崩溃恢复可靠 |
-| **图像处理** | sharp | 性能10-50倍优于pngjs，内存低 |
-| **图像对比** | ssim.js + pixelmatch | 多维度对比，精度高 |
-| **加密存储** | electron.safeStorage | 系统原生加密，安全可靠 |
-| **日志** | pino | 结构化JSON，性能极高 |
-| **HTTP** | node-fetch / axios | 请求管理，拦截器支持 |
-| **时间处理** | date-fns | Tree-shakeable，轻量 |
-| **类型检查** | TypeScript 5.4+ | 完整的类型安全 |
-| **测试框架** | Vitest + Playwright | 快速单测，原生async支持 |
+| **浏览器自动化** | playwright-core | headless 截图与页面渲染 |
+| **数据库** | node:sqlite (WAL模式) | 内嵌式，无服务，崩溃恢复可靠 |
+| **图像对比** | pngjs + SSIM/像素差异 + AI兜底 | 三级策略落地（本阶段为最小实现） |
+| **Secrets** | env_only | Server 读环境变量；前端只展示掩码 |
+| **日志** | JSON logger（内置） | 结构化输出，便于采集 |
+| **HTTP** | 原生 fetch | Server/Web 统一使用 |
+| **类型检查** | TypeScript | 完整的类型安全 |
+| **测试框架** | node:test + Vitest | Node 侧单测/集成/e2e + Web 壳 |
 
 ---
 
@@ -536,14 +529,14 @@ export const projectConfig = {
 
 | 决策 | 理由 |
 |-----|------|
-| **pnpm monorepo** | 核心引擎脱离Electron独立测试；未来移植服务端 |
-| **sharp替代pngjs** | 性能10-50倍，内存占用低80% |
-| **SSIM+pixelmatch+AI三级** | 单一pixelmatch对动态内容误报率极高（>30%） |
-| **safeStorage加密凭证** | OS原生加密，无需自实现，更新便捷 |
+| **pnpm monorepo** | 核心引擎可独立测试；后续可加 Electron 薄壳 |
+| **Web 优先** | 先把任务持久化/断点恢复/产出物落盘跑通，再扩展桌面壳 |
+| **SSIM+像素差异+AI三级** | 单一像素对比对动态内容误报率高，需要语义兜底 |
+| **env_only secrets** | 先保证“不落地明文”，后续再补齐加密持久化方案 |
 | **SQLite WAL模式** | 读写不阻塞，崩溃恢复可靠 |
 | **Prompt外置JSON** | 版本管理、热更新，无需改代码重打包 |
 | **Playwright route拦截** | 屏蔽非关键资源，爬取速度提升3-5倍 |
-| **pino日志系统** | 结构化JSON，性能100倍于console.log |
+| **结构化日志** | 统一 JSON 输出，便于排查任务级错误与复现 |
 | **signleton BrowserPool** | Context轻量，复用率高，内存稳定 |
 | **感知哈希去重** | 识别相似内容，避免重复AI调用，降低成本50%+ |
 
